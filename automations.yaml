@@ -1,0 +1,392 @@
+- id: '1676631423524'
+  alias: Kid left school
+  description: ''
+  trigger:
+  - platform: zone
+    entity_id: person.javor_ampuja, person.matias_ampuja
+    zone: zone.metsolan_koulu
+    event: leave
+  condition: []
+  action:
+  - service: tts.cloud_say
+    data:
+      entity_id: media_player.dining_room_display
+      language: fi-FI
+      options:
+        gender: male
+      cache: false
+      message: '{{ states[trigger.entity_id.split(''.'')[0]][ trigger.entity_id.split(''.'')[1]].name
+        }} lähti koulusta!'
+  mode: single
+- id: '1679671899671'
+  alias: TV turned on
+  description: Turn on LED stripe when TV turned on
+  trigger:
+  - platform: device
+    device_id: 2dec9d9b8deda205de15505adfae9572
+    domain: media_player
+    entity_id: media_player.living_room_tv
+    type: turned_on
+  condition: []
+  action:
+  - service: scene.turn_on
+    target:
+      entity_id: scene.watch_tv
+    metadata: {}
+  mode: single
+- id: '1679672191689'
+  alias: TV turned off
+  description: Turn off LED stripe when TV turned off
+  trigger:
+  - platform: device
+    device_id: 30065a393069d09edc7fe6024ea71dad
+    domain: media_player
+    entity_id: media_player.living_room_tv
+    type: turned_off
+  condition: []
+  action:
+  - type: turn_off
+    device_id: 20c9cd6cfbb98933d37de8467fcf0d7a
+    entity_id: light.living_room_led_strip
+    domain: light
+  mode: single
+- id: '1672231955744'
+  alias: Thermostat offsets
+  description: Sends local calibration values to thermostats
+  trigger:
+  - platform: time_pattern
+    minutes: /10
+  condition: []
+  action:
+  - service: mqtt.publish
+    data:
+      topic: zigbee2mqtt/thermostat/upstairs/javor/main/set
+      payload: '{"local_temperature_calibration": {{states(''sensor.upstairs_thermostat_javor_temperature_offset_main'')|int}}}'
+    enabled: true
+  - service: mqtt.publish
+    data:
+      topic: zigbee2mqtt/thermostat/upstairs/matias/main/set
+      payload: '{"local_temperature_calibration": {{states(''sensor.upstairs_thermostat_matias_temperature_offset_main'')|int}}}'
+  - service: mqtt.publish
+    data:
+      topic: zigbee2mqtt/thermostat/upstairs/matias/secondary/set
+      payload: '{"local_temperature_calibration": {{states(''sensor.upstairs_thermostat_matias_temperature_offset_secondary'')|int}}}'
+  variables:
+    javor_offset:
+  mode: single
+- id: '1680691579919'
+  alias: Sauna notification
+  description: Notifys when sauna is ready
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.sauna_temperature
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    above: 50
+  condition: []
+  action:
+  - if:
+    - condition: or
+      conditions:
+      - condition: time
+        before: '21:00:00'
+        weekday:
+        - thu
+        - wed
+        - tue
+        - mon
+        - sun
+      - condition: time
+        before: '23:30:00'
+        weekday:
+        - sat
+        - fri
+    then:
+    - service: tts.cloud_say
+      data:
+        cache: false
+        entity_id: media_player.dining_room_display
+        message: Sauna on lämmin! Lämpötila on nyt {{states('sensor.sauna_temperature')|float|round(
+          0, 'floor')}} astetta.
+        language: fi-FI
+        options:
+          gender: male
+  - service: notify.mobile_app_oneplus11
+    data:
+      message: Sauna is ready! Temperature is {{states('sensor.sauna_temperature')|float|round(
+        0, 'floor')}}°C
+      data:
+        actions:
+        - action: PLAY_SAUNA_MUSIC
+          title: Play sauna music
+        - action: CANCEL
+          title: OK
+  mode: single
+- id: '1675434467940'
+  alias: Dryer is ready
+  description: Notify when dryer is ready
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.dryer_dryer_machine_state
+    to: stop
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+  condition: []
+  action:
+  - service: notify.discordnotifications
+    data:
+      message: Dryer is ready! You can pick up clothes.
+      target:
+      - '1107661935132024842'
+  - service: mqtt.publish
+    data:
+      qos: '1'
+      retain: false
+      topic: zigbee2mqtt/Linving room light/set
+      payload: '{"effect": "okay"}'
+  - if:
+    - condition: or
+      conditions:
+      - condition: time
+        before: '21:00:00'
+        weekday:
+        - thu
+        - wed
+        - tue
+        - mon
+        - sun
+      - condition: time
+        before: '23:30:00'
+        weekday:
+        - sat
+        - fri
+    then:
+    - service: tts.cloud_say
+      data:
+        entity_id: media_player.dining_room_display
+        language: fi-FI
+        options:
+          gender: male
+        message: Kuivausrumpu on nyt valmis! Voit noutaa vaatteet.
+        cache: false
+  mode: single
+- id: '1684239754202'
+  alias: Sauna music
+  description: Play music for sauna
+  trigger:
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: PLAY_SAUNA_MUSIC
+  condition: []
+  action:
+  - service: notify.mobile_app_oneplus11
+    data:
+      message: Music started
+  - service: media_player.play_media
+    target:
+      entity_id: media_player.bathroom_speaker
+    data:
+      media_content_id: spotify://b967151785520e1d177123eaf3f32220/spotify:track:5g6o2ZEegnAI3MczbwZaTZ
+      media_content_type: spotify://track
+    metadata:
+      title: Calling Elvis
+      thumbnail:
+      media_class: track
+      children_media_class:
+      navigateIds:
+      - {}
+      - media_content_type: spotify://library
+        media_content_id: spotify://b967151785520e1d177123eaf3f32220
+      - media_content_type: spotify://current_user_followed_artists
+        media_content_id: spotify://b967151785520e1d177123eaf3f32220/current_user_followed_artists
+      - media_content_type: spotify://artist
+        media_content_id: spotify://b967151785520e1d177123eaf3f32220/spotify:artist:0WwSkZ7LtFUFjGjMZBMt6T
+      - media_content_type: spotify://album
+        media_content_id: spotify://b967151785520e1d177123eaf3f32220/spotify:album:7gk5j9Ok764TbTsmkxthYt
+  mode: single
+- id: '1685094506549'
+  alias: Somebody home
+  description: Turn on camera privacy etc.
+  trigger:
+  - platform: zone
+    entity_id:
+    - person.lauri_ampuja
+    - person.ralitsa_ampuja
+    - person.javor_ampuja
+    - person.matias_ampuja
+    zone: zone.home
+    event: enter
+  condition:
+  - condition: device
+    device_id: ec0e9d29feb148c233001c673240c043
+    domain: alarm_control_panel
+    entity_id: alarm_control_panel.alarmo
+    type: is_disarmed
+  action:
+  - type: turn_on
+    device_id: 8aa74da01379b4ae74c5ec36f05761ba
+    entity_id: switch.living_room_camera_privacy_mode
+    domain: switch
+  mode: single
+- id: '1685097115157'
+  alias: Reset Living room camera motion detected
+  description: Automation to reset motion detected value
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.living_room_camera_motion_detected
+    to: 'True'
+    from: 'False'
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+  - platform: device
+    device_id: 8aa74da01379b4ae74c5ec36f05761ba
+    domain: select
+    entity_id: select.living_room_camera_sound_detection_densitivity
+    type: current_option_changed
+    from: '0'
+    to: '1'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  condition:
+  - condition: device
+    type: is_on
+    device_id: 8aa74da01379b4ae74c5ec36f05761ba
+    entity_id: switch.living_room_camera_motion_alarm
+    domain: switch
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  action:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - device_id: 8aa74da01379b4ae74c5ec36f05761ba
+    domain: select
+    entity_id: select.living_room_camera_sound_detection_densitivity
+    type: select_option
+    option: '0'
+  mode: single
+- id: '1685441030711'
+  alias: Everybody Away
+  description: Turn off sertain things when everybody away
+  trigger:
+  - platform: numeric_state
+    entity_id: zone.home
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+    below: 0.2
+  condition:
+  - condition: numeric_state
+    entity_id: zone.home
+    below: 1
+  action:
+  - type: turn_off
+    device_id: 8aa74da01379b4ae74c5ec36f05761ba
+    entity_id: switch.living_room_camera_privacy_mode
+    domain: switch
+  - type: turn_off
+    device_id: 0dfdd71d2d104d3fc9a63f4f5529e809
+    entity_id: switch.living_room_tv
+    domain: switch
+  - type: turn_off
+    device_id: 1e6ba956a7fe10c347ccb8c2f4c2f5f1
+    entity_id: light.dining_room_light
+    domain: light
+  - type: turn_off
+    device_id: 89a1583ab4c7497edd1ded045e8a7e76
+    entity_id: light.linving_room_light
+    domain: light
+  - service: alarm_control_panel.alarm_arm_away
+    data: {}
+  mode: single
+- id: '1685455580143'
+  alias: Garage door open at night
+  description: Warn if garage door is left open at night
+  trigger:
+  - platform: time_pattern
+    minutes: /15
+    seconds: '0'
+  condition:
+  - condition: and
+    conditions:
+    - condition: state
+      entity_id: binary_sensor.garage_door_contact
+      state: 'on'
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      enabled: true
+    - condition: or
+      conditions:
+      - condition: time
+        weekday:
+        - mon
+        - tue
+        - wed
+        - thu
+        - sun
+        after: '21:00:00'
+      - condition: time
+        after: '23:00:00'
+        weekday:
+        - sat
+        - fri
+  action:
+  - service: tts.cloud_say
+    data:
+      cache: false
+      entity_id: media_player.dining_room_display
+      message: Autotallin ovi on auki! Käy sulkemassa se yöksi.
+      language: fi-FI
+      options:
+        gender: male
+  - service: notify.discordnotifications
+    data:
+      target:
+      - '1107661935132024842'
+      message: Garage door is open! Please close it for night!
+  mode: single
+- id: '1691787016891'
+  alias: Notify Practices
+  description: Notify boys about practices
+  trigger:
+  - platform: calendar
+    event: start
+    offset: '-3:0:0'
+    entity_id: calendar.family
+  condition: []
+  action:
+  - if:
+    - condition: template
+      value_template: '{{ ''U9'' in trigger.calendar_event.summary }}'
+    then:
+    - service: notify.mobile_app_samsunga6
+      data:
+        title: '{{trigger.calendar_event.summary}}'
+        message: '{{trigger.calendar_event.start}}'
+  - if:
+    - condition: template
+      value_template: '{{ ''U12'' in trigger.calendar_event.summary }}'
+    then:
+    - service: notify.mobile_app_oneplus7
+      data:
+        title: '{{trigger.calendar_event.summary}}'
+        message: '{{trigger.calendar_event.start}}'
+  mode: single

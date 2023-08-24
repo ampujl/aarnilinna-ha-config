@@ -1,0 +1,31 @@
+- id: '1679671826721'
+  name: Watch TV
+  entities:
+    light.living_room_led_strip:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      supported_color_modes:
+      - brightness
+      - color_temp
+      - hs
+      friendly_name: Living room LED-strip
+      supported_features: 0
+      color_mode: color_temp
+      brightness: 3
+      color_temp_kelvin: 3952
+      color_temp: 253
+      hs_color:
+      - 26.835
+      - 35.746
+      rgb_color:
+      - 255
+      - 204
+      - 163
+      xy_color:
+      - 0.424
+      - 0.366
+      state: 'on'
+  icon: mdi:television
+  metadata: {}

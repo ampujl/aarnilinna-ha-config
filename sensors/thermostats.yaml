@@ -1,0 +1,52 @@
+# - sensor:
+- name: "upstairs_thermostat_javor_temperature_offset_main"
+  unit_of_measurement: °C
+  state_class: measurement
+  state: >
+    {% set cal = 
+      (
+        states('sensor.javors_room_temperature') | round(1, 'ceil') - 
+        (
+          state_attr('climate.thermostat_upstairs_javor_main', 'current_temperature')|float - 
+          state_attr('climate.thermostat_upstairs_javor_main', 'local_temperature_calibration')|float
+        ) 
+      )|round(0,'floor') 
+    %}
+    {% if states('sensor.javors_room_temperature') | round(1, 'ceil') > state_attr('climate.thermostat_upstairs_javor_main', 'current_heating_setpoint')|float %} {{ 0 }}
+    {% elif cal > 0 %} {{ 0 }}
+    {% else %} {{ cal }} 
+    {% endif %}
+- name: "upstairs_thermostat_matias_temperature_offset_main"
+  unit_of_measurement: °C
+  state_class: measurement
+  state: >
+    {% set cal = 
+      (
+        states('sensor.matias_room_temperature') | round(1, 'ceil') - 
+        (
+          state_attr('climate.thermostat_upstairs_matias_main', 'current_temperature')|float - 
+          state_attr('climate.thermostat_upstairs_matias_main', 'local_temperature_calibration')|float
+        ) 
+      )|round(0,'floor') 
+    %}
+    {% if states('sensor.matias_room_temperature') | round(1, 'ceil') > state_attr('climate.thermostat_upstairs_matias_main', 'current_heating_setpoint')|float %} {{ 0 }}
+    {% elif cal > 0 %} {{ 0 }}
+    {% else %} {{ cal }} 
+    {% endif %}
+- name: "upstairs_thermostat_matias_temperature_offset_secondary"
+  unit_of_measurement: °C
+  state_class: measurement
+  state: >
+    {% set cal = 
+      (
+        states('sensor.matias_room_temperature') | round(1, 'ceil') - 
+        (
+          state_attr('climate.thermostat_upstairs_matias_secondary', 'current_temperature')|float - 
+          state_attr('climate.thermostat_upstairs_matias_secondary', 'local_temperature_calibration')|float
+        ) 
+      )|round(0,'floor') 
+    %}
+    {% if states('sensor.matias_room_temperature') | round(1, 'ceil') > state_attr('climate.thermostat_upstairs_matias_secondary', 'current_heating_setpoint')|float %} {{ 0 }}
+    {% elif cal > 0 %} {{ 0 }}
+    {% else %} {{ cal }} 
+    {% endif %}

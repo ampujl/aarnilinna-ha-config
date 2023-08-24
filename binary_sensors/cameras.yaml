@@ -1,0 +1,9 @@
+# -senor:
+- name: "living_room_camera_motion_detected"
+  device_class: motion
+  state: >
+    {% if is_state('switch.living_room_camera_motion_alarm', 'on') %}
+      {{ is_state('select.living_room_camera_sound_detection_densitivity', '1') }}
+    {% else %}
+      False
+    {% endif %}

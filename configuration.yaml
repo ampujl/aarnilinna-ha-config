@@ -1,0 +1,35 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+template:
+  - sensor: !include_dir_merge_list sensors/
+  - binary_sensor: !include_dir_merge_list binary_sensors/
+
+homeassistant:
+  country: FI
+  packages:
+    car_heater: !include car_heater.yaml
+
+spotcast:
+  sp_dc: !secret sp_dc
+  sp_key: !secret sp_key
+
+weather:
+  - platform: template
+    unique_id: "aarnilinna"
+    name: "Aarnilinna"
+    condition_template: "{{ states('weather.koti_aarnilinna') }}"
+    temperature_template: "{{ states('sensor.out_temperature') | float }}"
+    humidity_template: "{{ states('sensor.out_humidity') | float }}"
+    forecast_template: "{{ state_attr('weather.koti_aarnilinna', 'forecast') }}"
